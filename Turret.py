@@ -6,15 +6,14 @@ import requests
 
 pwm = PWM(0x06F)
 mh = Raspi_MotorHAT(addr=0x6f)
-motor = mh.getMotor(3)
+motor = mh.getMotor(1)
 
 servoMin = 0  # Min pulse length out of 4096
-servoMax = 600  # Max pulse length out of 4096
+servoMax = 650  # Max pulse length out of 4096
 
 def setAngle(angle):
     pwm.setPWMFreq(60)
-    pwm.setPWM(0, 0, servoMax)
-
+    pwm.setPWM(0, 0, angle*2)
 
 def getShotStats():
   r = requests.get('https://un3639u15a.execute-api.us-east-1.amazonaws.com/prod/turretGetSettings')
@@ -25,6 +24,7 @@ def getShotStats():
 
 def setSpeed(speed):
     motor.setSpeed(speed)
+    motor.run(Raspi_MotorHAT.FORWARD)
 
 def turnOffMotors():
 	motor.run(Raspi_MotorHAT.RELEASE)
@@ -33,10 +33,12 @@ def turnOffMotors():
 
 def loop():
     x = getShotStats()
-    setAngle(x[0])
-    setSpeed(x[1])
+    print x
+    setAngle(x[1])
+    setSpeed(x[0])
+    print "Speed set and angle"
     time.sleep(2)
     turnOffMotors()
+    setAngle(10)
 
-def main():
-    loop():
+loop()
