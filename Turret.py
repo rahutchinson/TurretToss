@@ -12,8 +12,17 @@ servoMin = 0  # Min pulse length out of 4096
 servoMax = 650  # Max pulse length out of 4096
 
 def setAngle(angle):
-    pwm.setPWMFreq(60)
-    pwm.setPWM(0, 0, angle*2)
+    if angle > 45 or angle < 0:
+        pwm.setPWM(1, 0, 0)
+        print("error in angle number")
+        return
+    ticks = int(angle*5.55)+210
+    if ticks < 210 or ticks > 460:
+        pwm.setPWM(1, 0, 0)
+        print("error in angle number")
+        return
+    pwm.setPWMFreq(50)
+    pwm.setPWM(1, 0, ticks)
 
 def getShotStats():
   r = requests.get('https://un3639u15a.execute-api.us-east-1.amazonaws.com/prod/turretGetSettings')
@@ -23,11 +32,16 @@ def getShotStats():
   return stats
 
 def setSpeed(speed):
-    motor.setSpeed(speed)
-    motor.run(Raspi_MotorHAT.FORWARD)
+    motor.setSpeed(25)
+    motor.run(Raspi_MotorHAT.BACKWARD)
+    time.sleep(1)
+    motor.setSpeed(35)
+    time.sleep(1)
+    motor.setSpeed(200)
 
-def turnOffMotors():
+def resetMotors():
 	motor.run(Raspi_MotorHAT.RELEASE)
+        setAngle(0)
 
 #[angle,speed]
 
@@ -37,8 +51,6 @@ def loop():
     setAngle(x[1])
     setSpeed(x[0])
     print "Speed set and angle"
-    time.sleep(2)
-    turnOffMotors()
-    setAngle(10)
-
+    time.sleep(10)
+    resetMotors()
 loop()
