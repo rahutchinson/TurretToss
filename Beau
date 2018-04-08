@@ -1,0 +1,16 @@
+def postShotResults():
+  
+  headers = {'content-type': 'application/json'}
+  url = 'https://rllh3iqk97.execute-api.us-east-1.amazonaws.com/prod/turret?a=10'
+
+  data = {"shotStatus": "Success"}
+
+  r =requests.post(url, data=json.dumps(data), headers=headers)
+  
+  requestStatus = r.json()['statusCode']
+  if requestStatus != 200:
+    print("Error!: " + str(r.json()))
+    return False
+  else:
+    print("POST success")
+    return True
