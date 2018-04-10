@@ -32,6 +32,23 @@ def getShotStats():
     stats.append(i[1])
   return stats
 
+def checkShot():
+    i = 0
+    value = sensor.Measurement(trig_pin,
+                            echo_pin,
+                            unit='imperial',
+                            round_to=2)
+    while(i<500):
+        raw = value.raw_distance(sample_size=1, sample_wait=0.01)
+        
+        imperial = value.distance_imperial(raw)
+        print imperial < 4.00
+        print imperial
+        if(imperial<4):
+            print "ballz"
+            return 1
+        i+=1
+    return 0
 
 def postShotResults(status):
   
@@ -49,13 +66,8 @@ def postShotResults(status):
     print("POST success")
     return True
 
-
 def setSpeed(speed):
-    motor.setSpeed(25)
     motor.run(Raspi_MotorHAT.BACKWARD)
-    time.sleep(1)
-    motor.setSpeed(35)
-    time.sleep(1)
     motor.setSpeed(speed)
 
 def resetMotors():
@@ -72,10 +84,8 @@ def runTurret(x):
 
 
 def check_shot(x):
-    ser = serial.Serial('/dev/ttyACM0',9600)
-    s = None
-    ser.write(bytes(b'1'))
     runTurret(x)
+    checkshot()
     try:
         print "here"
 	s = str(int(ser.readline()))
