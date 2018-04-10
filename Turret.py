@@ -3,6 +3,7 @@ from Raspi_PWM_Servo_Driver import PWM
 from Raspi_MotorHAT import Raspi_MotorHAT, Raspi_DCMotor
 import time
 import requests
+import serial as serial
 
 pwm = PWM(0x06F)
 mh = Raspi_MotorHAT(addr=0x6f)
@@ -26,10 +27,28 @@ def setAngle(angle):
 
 def getShotStats():
   r = requests.get('https://un3639u15a.execute-api.us-east-1.amazonaws.com/prod/turretGetSettings')
-  stats =[]
+  stats = []
   for i in r.json().items():
     stats.append(i[1])
   return stats
+
+
+def postShotResults(status):
+  
+  headers = {'content-type': 'application/json'}
+  url = 'https://rllh3iqk97.execute-api.us-east-1.amazonaws.com/prod/turret?a=10'
+
+  data = {"shotStatus": status}
+
+  r =requests.post(url, data=json.dumps(data), headers=headers)
+  requestStatus = r.json()['statusCode']
+  if requestStatus != 200:
+    print("Error!: " + str(r.json()))
+    return False
+  else:
+    print("POST success")
+    return True
+
 
 def setSpeed(speed):
     motor.setSpeed(25)
@@ -37,7 +56,7 @@ def setSpeed(speed):
     time.sleep(1)
     motor.setSpeed(35)
     time.sleep(1)
-    motor.setSpeed(200)
+    motor.setSpeed(speed)
 
 def resetMotors():
 	motor.run(Raspi_MotorHAT.RELEASE)
@@ -45,28 +64,39 @@ def resetMotors():
 
 #[angle,speed]
 
-def loop():
-    x = getShotStats()
-    print x
+def runTurret(x):
     setAngle(x[1])
     setSpeed(x[0])
     print "Speed set and angle"
     time.sleep(10)
-    resetMotors()
-loop()
 
-import serial
-import time
 
-def check_shot():
+def check_shot(x):
     ser = serial.Serial('/dev/ttyACM0',9600)
     s = None
     ser.write(bytes(b'1'))
-	time.sleep(3)
-	try:
-		s = str(int (ser.readline()))	
-	except:
-		pass
-	if(s):
-		return(1)
-	return(0)
+    runTurret(x)
+    try:
+        print "here"
+	s = str(int(ser.readline()))
+        print s + "this"
+    except:
+	pass
+    if(s):
+	return(1)
+    return(0)
+
+
+def main():
+
+    x = getShotStats()
+    if x == []:
+        print("No shot in queue")
+        return
+
+    result = check_shot(x)
+    resetMotors()
+    print result
+    postShotResults(result)
+
+main()
